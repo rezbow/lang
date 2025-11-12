@@ -1,59 +1,92 @@
 package lang
 
 import (
+	"log"
 	"strconv"
-	"strings"
-	"unicode"
 )
 
-func sum(nums []int) (result int) {
-	for _, n := range nums {
-		result += n
+type PrecedentLevel int
+
+const (
+	PrecedentLevelOne   PrecedentLevel = iota // + and -
+	PrecedentLevelTwo                         // * and /
+	PrecedentLevelThree                       // unary and () and number
+)
+
+func tokenPrecedent(t TokenType) PrecedentLevel {
+	switch t {
+	case TokenPlus, TokenMinus:
+		return PrecedentLevelOne
+	case TokenMul:
+		return PrecedentLevelTwo
+	default:
+		return PrecedentLevelThree
 	}
-	return
 }
 
-func sub(nums []int) (result int) {
-	result = nums[0]
-	for idx, n := range nums {
-		if idx == 0 {
-			continue
-		}
-		result -= n
+func toInt(s string) int {
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		log.Println(err)
 	}
-	return
+	return n
 }
 
-func number(index int, runes []rune) (int, int) {
-	var n int
-	for ; index < len(runes) && unicode.IsDigit(runes[index]); index++ {
-		num, _ := strconv.Atoi(string(runes[index]))
-		n = n*10 + num
-	}
-	return n, index
+type Evaluator struct {
+	tokens []Token
+	cursor int
 }
 
-func Run(exp string) int {
-	exp = strings.TrimSpace(exp)
-	nums := make([]int, 0)
-	runes := []rune(exp)
-
-	var arithmeticFunc func([]int) int
-
-	for i := 0; i < len(runes); {
-		if unicode.IsDigit(runes[i]) {
-			var num int
-			num, i = number(i, runes)
-			nums = append(nums, num)
-			continue
+func (e *Evaluator) value(level PrecedentLevel) int {
+	if level >= PrecedentLevelThree {
+		t := e.next()
+		switch t.T {
+		case TokenNumber:
+			return toInt(t.Content)
+		case TokenLeftParen:
+			return e.expr(PrecedentLevelOne)
+		default:
+			return 0
 		}
-		switch runes[i] {
-		case '+':
-			arithmeticFunc = sum
-		case '-':
-			arithmeticFunc = sub
-		}
-		i++
+	} else {
+		return e.expr(level)
 	}
-	return arithmeticFunc(nums)
+}
+
+func (e *Evaluator) expr(level PrecedentLevel) int {
+	v := e.value(level + 1)
+	for e.peek() != TokenEOF && e.peek() != TokenRightParen && level == tokenPrecedent(e.peek()) {
+		op := e.next()
+		right := e.value(level + 1)
+		switch op.T {
+		case TokenPlus:
+			v = v + right
+		case TokenMinus:
+			v = v - right
+		case TokenMul:
+			v = v * right
+		}
+	}
+	return v
+}
+
+func (e *Evaluator) Eval() int {
+	return e.expr(PrecedentLevelOne)
+}
+
+func (e *Evaluator) peek() TokenType {
+	return e.tokens[e.cursor].T
+}
+func (e *Evaluator) next() Token {
+	t := e.tokens[e.cursor]
+	if t.T != TokenEOF {
+		e.cursor++
+	}
+	return t
+}
+
+func Run(expr string) int {
+	tokens := tokenize(expr)
+	E := Evaluator{tokens: tokens}
+	return E.Eval()
 }
