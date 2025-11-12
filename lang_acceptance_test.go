@@ -16,6 +16,7 @@ func Test_arithmetic_expression(t *testing.T) {
 		{exp: "12+5", want: 17},
 		{exp: "12+5+1+2", want: 20},
 		{exp: "10-5", want: 5},
+		{exp: "5+2-1+4", want: 10},
 		{exp: "2*10*2", want: 40},
 		{exp: "2+10*4", want: 42},
 		{exp: "2*10+4", want: 24},
