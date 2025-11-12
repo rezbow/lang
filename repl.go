@@ -9,6 +9,11 @@ import (
 func Repl(r io.Reader) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		fmt.Println(Run(scanner.Text()))
+		output, err := Run(scanner.Text())
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			fmt.Println(output)
+		}
 	}
 }

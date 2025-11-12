@@ -1,6 +1,7 @@
 package lang
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 )
@@ -35,6 +36,7 @@ func toInt(s string) int {
 type Evaluator struct {
 	tokens []Token
 	cursor int
+	err    error
 }
 
 func (e *Evaluator) value(level PrecedentLevel) int {
@@ -45,7 +47,12 @@ func (e *Evaluator) value(level PrecedentLevel) int {
 			return toInt(t.Content)
 		case TokenLeftParen:
 			return e.expr(PrecedentLevelOne)
+		case TokenMinus:
+			return -(e.value(level))
+		case TokenPlus:
+			return e.value(level)
 		default:
+			e.err = fmt.Errorf("Unexpected token: %q", t.Content)
 			return 0
 		}
 	} else {
@@ -85,8 +92,8 @@ func (e *Evaluator) next() Token {
 	return t
 }
 
-func Run(expr string) int {
+func Run(expr string) (int, error) {
 	tokens := tokenize(expr)
 	E := Evaluator{tokens: tokens}
-	return E.Eval()
+	return E.Eval(), E.err
 }

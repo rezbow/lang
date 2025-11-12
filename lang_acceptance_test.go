@@ -22,11 +22,13 @@ func Test_arithmetic_expression(t *testing.T) {
 		{exp: "2*10+4", want: 24},
 		{exp: "2*(10+4)", want: 28},
 		{exp: "2+10*(10-5)", want: 52},
+		{exp: "2+10*(10*(1+2*(2+2)))", want: 902},
+		{exp: "-2*2*-4", want: 16},
 		//
 	}
 	for _, test := range tests {
 		t.Run(test.exp, func(t *testing.T) {
-			got := lang.Run(test.exp)
+			got, _ := lang.Run(test.exp)
 			if got != test.want {
 				t.Errorf("got %d, wanted %d", got, test.want)
 			}

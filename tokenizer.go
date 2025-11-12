@@ -47,6 +47,9 @@ func tokenize(expr string) []Token {
 	var tokens []Token
 	for cursor := 0; cursor < len(expr); {
 		cursor = skipSpace(expr, cursor)
+		if cursor >= len(expr) {
+			break
+		}
 		ch := rune(expr[cursor])
 		switch {
 		case unicode.IsDigit(ch):
