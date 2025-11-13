@@ -8,17 +8,17 @@ import (
 
 func Repl(r io.Reader) {
 	scanner := bufio.NewScanner(r)
-	scan := func() bool {
+	eachLine := func() bool {
 		fmt.Print("> ")
 		res := scanner.Scan()
 		return res
 	}
-	for scan() {
-		output, err := Run(scanner.Text())
+	for eachLine() {
+		result, err := Run(scanner.Text())
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Printf("Error: %v\n", err)
 		} else {
-			fmt.Println(output)
+			fmt.Println(result)
 		}
 	}
 }

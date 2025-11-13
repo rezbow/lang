@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+
+	"github.com/rezbow/lang/tokenizer"
 )
 
 type PrecedentLevel int
@@ -14,11 +16,11 @@ const (
 	PrecedentLevelThree                       // unary and () and number
 )
 
-func tokenPrecedent(t TokenType) PrecedentLevel {
+func tokenPrecedent(t tokenizer.TokenType) PrecedentLevel {
 	switch t {
-	case TokenPlus, TokenMinus:
+	case tokenizer.TokenPlus, tokenizer.TokenMinus:
 		return PrecedentLevelOne
-	case TokenMul:
+	case tokenizer.TokenMul:
 		return PrecedentLevelTwo
 	default:
 		return PrecedentLevelThree
@@ -34,7 +36,7 @@ func toInt(s string) int {
 }
 
 type Evaluator struct {
-	tokens []Token
+	tokens []tokenizer.Token
 	cursor int
 	err    error
 }
@@ -43,13 +45,13 @@ func (e *Evaluator) value(level PrecedentLevel) int {
 	if level >= PrecedentLevelThree {
 		t := e.next()
 		switch t.T {
-		case TokenNumber:
+		case tokenizer.TokenNumber:
 			return toInt(t.Content)
-		case TokenLeftParen:
+		case tokenizer.TokenLeftParen:
 			return e.expr(PrecedentLevelOne)
-		case TokenMinus:
+		case tokenizer.TokenMinus:
 			return -(e.value(level))
-		case TokenPlus:
+		case tokenizer.TokenPlus:
 			return e.value(level)
 		default:
 			e.err = fmt.Errorf("Unexpected token: %q", t.Content)
@@ -61,16 +63,23 @@ func (e *Evaluator) value(level PrecedentLevel) int {
 }
 
 func (e *Evaluator) expr(level PrecedentLevel) int {
+	isRightParen := func() bool {
+		is := e.peek() == tokenizer.TokenRightParen
+		if is {
+			e.next()
+		}
+		return is
+	}
 	v := e.value(level + 1)
-	for e.peek() != TokenEOF && e.peek() != TokenRightParen && level == tokenPrecedent(e.peek()) {
+	for e.peek() != tokenizer.TokenEOF && !isRightParen() && level == tokenPrecedent(e.peek()) {
 		op := e.next()
 		right := e.value(level + 1)
 		switch op.T {
-		case TokenPlus:
+		case tokenizer.TokenPlus:
 			v = v + right
-		case TokenMinus:
+		case tokenizer.TokenMinus:
 			v = v - right
-		case TokenMul:
+		case tokenizer.TokenMul:
 			v = v * right
 		}
 	}
@@ -81,19 +90,19 @@ func (e *Evaluator) Eval() int {
 	return e.expr(PrecedentLevelOne)
 }
 
-func (e *Evaluator) peek() TokenType {
+func (e *Evaluator) peek() tokenizer.TokenType {
 	return e.tokens[e.cursor].T
 }
-func (e *Evaluator) next() Token {
+func (e *Evaluator) next() tokenizer.Token {
 	t := e.tokens[e.cursor]
-	if t.T != TokenEOF {
+	if t.T != tokenizer.TokenEOF {
 		e.cursor++
 	}
 	return t
 }
 
 func Run(expr string) (int, error) {
-	tokens := tokenize(expr)
+	tokens := tokenizer.Tokenize(expr)
 	E := Evaluator{tokens: tokens}
 	return E.Eval(), E.err
 }

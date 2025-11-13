@@ -1,4 +1,4 @@
-package lang
+package tokenizer
 
 import (
 	"strings"
@@ -19,6 +19,8 @@ const (
 	TokenMul
 	TokenLeftParen
 	TokenRightParen
+	TokenIdentifier
+	TokenAssign
 	TokenEOF
 )
 
@@ -32,6 +34,17 @@ func skipSpace(expr string, cursor int) int {
 	return cursor
 }
 
+func identifier(expr string, cursor int) (Token, int) {
+	var stringBuilder strings.Builder
+	for ; cursor < len(expr) && unicode.IsLetter(rune(expr[cursor])); cursor++ {
+		stringBuilder.WriteByte(expr[cursor])
+	}
+	return Token{
+		T:       TokenIdentifier,
+		Content: stringBuilder.String(),
+	}, cursor
+}
+
 func number(expr string, cursor int) (Token, int) {
 	var stringBuilder strings.Builder
 	for ; cursor < len(expr) && unicode.IsDigit(rune(expr[cursor])); cursor++ {
@@ -43,7 +56,7 @@ func number(expr string, cursor int) (Token, int) {
 	}, cursor
 }
 
-func tokenize(expr string) []Token {
+func Tokenize(expr string) []Token {
 	var tokens []Token
 	for cursor := 0; cursor < len(expr); {
 		cursor = skipSpace(expr, cursor)
@@ -55,6 +68,10 @@ func tokenize(expr string) []Token {
 		case unicode.IsDigit(ch):
 			var t Token
 			t, cursor = number(expr, cursor)
+			tokens = append(tokens, t)
+		case unicode.IsLetter(ch):
+			var t Token
+			t, cursor = identifier(expr, cursor)
 			tokens = append(tokens, t)
 		case ch == '+':
 			tokens = append(tokens, Token{T: TokenPlus, Content: "+"})
@@ -70,6 +87,9 @@ func tokenize(expr string) []Token {
 			cursor++
 		case ch == ')':
 			tokens = append(tokens, Token{T: TokenRightParen, Content: ")"})
+			cursor++
+		case ch == '=':
+			tokens = append(tokens, Token{T: TokenAssign, Content: "="})
 			cursor++
 		default:
 			cursor++

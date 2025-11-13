@@ -22,6 +22,7 @@ func Test_arithmetic_expression(t *testing.T) {
 		{exp: "2*10+4", want: 24},
 		{exp: "2*(10+4)", want: 28},
 		{exp: "2+10*(10-5)", want: 52},
+		{exp: "(10-5) * 2", want: 10},
 		{exp: "2+10*(10*(1+2*(2+2)))", want: 902},
 		{exp: "-2*2*-4", want: 16},
 		//
